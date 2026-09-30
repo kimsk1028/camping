@@ -1,6 +1,98 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'services/settlement_calculator.dart';
 
+// ============================================================================
+// 1. 정산 알고리즘 & 모델
+// ============================================================================
+class ExpenseItem {
+  final String id;
+  final String title;
+  final String payerId;
+  final double amount;
+  final List<String> participantIds;
+
+  ExpenseItem({
+    required this.id,
+    required this.title,
+    required this.payerId,
+    required this.amount,
+    required this.participantIds,
+  });
+}
+
+class TransferResult {
+  final String fromUserId;
+  final String toUserId;
+  final double amount;
+
+  TransferResult({
+    required this.fromUserId,
+    required this.toUserId,
+    required this.amount,
+  });
+}
+
+class SettlementCalculator {
+  static List<TransferResult> calculate({
+    required List<String> memberIds,
+    required List<ExpenseItem> expenses,
+  }) {
+    final Map<String, double> netBalances = {for (var id in memberIds) id: 0.0};
+
+    for (final exp in expenses) {
+      if (exp.participantIds.isEmpty || exp.amount <= 0) continue;
+
+      final double splitAmount = exp.amount / exp.participantIds.length;
+      netBalances[exp.payerId] = (netBalances[exp.payerId] ?? 0.0) + exp.amount;
+
+      for (final participantId in exp.participantIds) {
+        netBalances[participantId] =
+            (netBalances[participantId] ?? 0.0) - splitAmount;
+      }
+    }
+
+    final List<MapEntry<String, double>> debtors = [];
+    final List<MapEntry<String, double>> creditors = [];
+
+    netBalances.forEach((userId, balance) {
+      if (balance < -0.01) {
+        debtors.add(MapEntry(userId, -balance));
+      } else if (balance > 0.01) {
+        creditors.add(MapEntry(userId, balance));
+      }
+    });
+
+    final List<TransferResult> transfers = [];
+    int i = 0;
+    int j = 0;
+
+    while (i < debtors.length && j < creditors.length) {
+      final debtor = debtors[i];
+      final creditor = creditors[j];
+      final double settleAmount = min(debtor.value, creditor.value);
+
+      transfers.add(
+        TransferResult(
+          fromUserId: debtor.key,
+          toUserId: creditor.key,
+          amount: (settleAmount / 10).round() * 10,
+        ),
+      );
+
+      debtors[i] = MapEntry(debtor.key, debtor.value - settleAmount);
+      creditors[j] = MapEntry(creditor.key, creditor.value - settleAmount);
+
+      if (debtors[i].value <= 0.01) i++;
+      if (creditors[j].value <= 0.01) j++;
+    }
+
+    return transfers;
+  }
+}
+
+// ============================================================================
+// 2. 메인 앱 UI
+// ============================================================================
 void main() {
   runApp(const CampingApp());
 }
@@ -35,7 +127,6 @@ class CampingHomeScreen extends StatefulWidget {
 class _CampingHomeScreenState extends State<CampingHomeScreen> {
   int _selectedIndex = 0;
 
-  // 샘플 데이터
   final List<String> members = ['김철수', '이영희', '박민수', '최지은'];
   final List<Map<String, dynamic>> checklists = [
     {'title': '리빙쉘 텐트 및 방수포', 'assignee': '김철수', 'done': true, 'category': '장비'},
@@ -110,7 +201,6 @@ class _CampingHomeScreenState extends State<CampingHomeScreen> {
     );
   }
 
-  // 1. 체크리스트 탭
   Widget _buildChecklistTab() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -133,14 +223,12 @@ class _CampingHomeScreenState extends State<CampingHomeScreen> {
     );
   }
 
-  // 2. 타임라인/기록 탭
   Widget _buildTimelineTab() {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: const [
         Card(
           child: Padding(
-            padding: EdgeInsets.all(16),
             padding: EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,7 +258,6 @@ class _CampingHomeScreenState extends State<CampingHomeScreen> {
     );
   }
 
-  // 3. 최소 송금 정산 탭
   Widget _buildSettlementTab() {
     final transfers = SettlementCalculator.calculate(
       memberIds: members,
