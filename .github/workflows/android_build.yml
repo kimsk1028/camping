@@ -23,18 +23,27 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x'
           channel: 'stable'
-          cache: true
 
-      - name: Reconstruct Project Structure
-        run: flutter create . --platforms=android --org=com.example
-
-      - name: Install Dependencies
-        run: flutter pub get
-
-      - name: Build Release APK
-        run: flutter build apk --release --no-tree-shake-icons
+      - name: Build Clean Flutter Project & Inject Code
+        run: |
+          # 1. 임시 폴더에 깨끗한 Flutter 프로젝트 생성
+          flutter create temp_app --org=com.example.camping
+          
+          # 2. 우리가 작성한 소스코드(lib 폴더) 복사
+          if [ -d "lib" ]; then
+            cp -r lib/* temp_app/lib/
+          fi
+          
+          # 3. 임시 앱 폴더로 이동 후 빌드 실행
+          cd temp_app
+          flutter pub get
+          flutter build apk --release --no-tree-shake-icons
+          
+          # 4. 완성된 APK를 루트 경로로 이동
+          cd ..
+          mkdir -p build/app/outputs/flutter-apk
+          cp temp_app/build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
