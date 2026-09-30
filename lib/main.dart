@@ -105,7 +105,7 @@ class CampingApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '캠핑 공유 앱',
+      title: '낭만캠핑',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -129,7 +129,6 @@ class CampingHomeScreen extends StatefulWidget {
 class _CampingHomeScreenState extends State<CampingHomeScreen> {
   int _selectedIndex = 0;
 
-  // 빈 데이터로 초기화 (샘플 데이터 제거)
   final List<String> members = ['나', '동행자1', '동행자2'];
   final List<Map<String, dynamic>> checklists = [];
   final List<Map<String, String>> journals = [];
@@ -142,7 +141,7 @@ class _CampingHomeScreenState extends State<CampingHomeScreen> {
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('⛺ 함께하는 캠핑 여행', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('⛺ 낭만캠핑', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             Text('멤버: 나, 동행자1, 동행자2', style: TextStyle(fontSize: 12, color: Colors.grey)),
           ],
         ),
@@ -431,7 +430,7 @@ class _CampingHomeScreenState extends State<CampingHomeScreen> {
                     title: titleController.text,
                     payerId: selectedPayer,
                     amount: amount,
-                    participantIds: List.from(members), // 전체 참여
+                    participantIds: List.from(members),
                   ));
                 });
                 Navigator.pop(context);
