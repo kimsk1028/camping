@@ -27,18 +27,22 @@ jobs:
 
       - name: Build Clean Flutter Project & Inject Code
         run: |
-          # 1. 새 Flutter 프로젝트 생성
-          flutter create temp_app --org=com.example.camping
+          # 1. '낭만캠핑' 이름으로 Flutter 프로젝트 생성
+          flutter create temp_app --name romantic_camping --org com.example.romantic_camping
           
           # 2. main.dart 복사
           cp lib/main.dart temp_app/lib/main.dart
           
-          # 3. APK 빌드
+          # 3. AndroidManifest.xml 파일의 앱 이름을 '낭만캠핑'으로 변경
+          sed -i 's/android:label="temp_app"/android:label="낭만캠핑"/g' temp_app/android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="romantic_camping"/android:label="낭만캠핑"/g' temp_app/android/app/src/main/AndroidManifest.xml
+          
+          # 4. APK 빌드
           cd temp_app
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
           
-          # 4. 결과물 위치 이동
+          # 5. 결과물 위치 이동
           cd ..
           mkdir -p build/app/outputs/flutter-apk
           cp temp_app/build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/app-release.apk
@@ -46,6 +50,6 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: camping-app-release
+          name: romantic-camping-release
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 7
